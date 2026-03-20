@@ -115,6 +115,9 @@ void showPrompt(void)
 {
     printf(" > ");
 }
+void ackOk(void) {
+    printf("ACK: silknode");
+}
 
 void showMenu(void)
 {
@@ -804,23 +807,23 @@ void jtagScan(void)
 uint xSwdClk=0;
 uint xSwdIO=1;
 bool swdDeviceFound=false;
-int getSwdChannels(void)
-{
-    char x;
-    printf("     Enter number of channels hooked up (Min 2, Max %d): ", maxChannels);
-    x = getIntFromSerial();
-    while(x < 2 || x > maxChannels)
-    {
-        printf("     Enter a valid value: ");
-        x = getIntFromSerial();
-    }
-    printf("     Number of channels set to: %d%s%s", x, EOL, EOL);
-    return(x);
-}
+// int getSwdChannels(void)
+// {
+//     char x;
+//     printf("     Enter number of channels hooked up (Min 2, Max %d): ", maxChannels);
+//     x = getIntFromSerial();
+//     while(x < 2 || x > maxChannels)
+//     {
+//         printf("     Enter a valid value: ");
+//         x = getIntFromSerial();
+//     }
+//     printf("     Number of channels set to: %d%s%s", x, EOL, EOL);
+//     return(x);
+// }
 
 void swdDisplayDeviceDetails(uint32_t idcode)
 {
-    printf("     [ Device 0 ]  0x%08X ",  idcode);
+    //printf("     [ Device 0 ]  0x%08X ",  idcode);
     uint32_t idc = idcode;
     long part = (idc & 0xffff000) >> 12;
     int bank=(idc & 0xf00) >> 8;
@@ -839,8 +842,8 @@ void swdDisplayDeviceDetails(uint32_t idcode)
     {
         printf("y%s%s", EOL, EOL);
         printf(" [ Ex. Openocd command ]%s%s", EOL, EOL);
-        printf("   'openocd -f interface/buspirate.cfg -c \"buspirate port XXXXXXXXXX; transport select swd;\" -f target/stm32f1x.cfg'%s%s", EOL, EOL);
-        printf("    Replace 'XXXXXXXXXX' with COM port of blueTag [Ex. '/dev/ttyACM0' (Linux) or 'COM4' (Win)]%s%s", EOL, EOL);    
+        printf("   'openocd -f buspirate.cfg -c \"buspirate port /dev/ttyACM0; transport select swd;\" -f stm32f1x.cfg'%s%s", EOL, EOL);
+        //printf("    Replace 'XXXXXXXXXX' with COM port of blueTag [Ex. '/dev/ttyACM0' (Linux) or 'COM4' (Win)]%s%s", EOL, EOL);    
         resetUART(); 
         initOpenocdMode(OPENOCD_PIN_DEFAULT, OPENOCD_PIN_DEFAULT, OPENOCD_PIN_DEFAULT, OPENOCD_PIN_DEFAULT, xSwdClk, xSwdIO, OPENOCD_MODE_SWD);
     }
@@ -849,10 +852,28 @@ void swdDisplayDeviceDetails(uint32_t idcode)
 
 void swdDisplayPinout(int swdio, int swclk, uint32_t idcode)
 {
-    printProgress(maxPermutations, maxPermutations);
+    //printProgress(maxPermutations, maxPermutations); // return as JSON 
     printf("%s%s", EOL, EOL);
     printf("     [  Pinout  ]  SWDIO=CH%d", swdio);
     printf(" SWCLK=CH%d%s%s", swclk, EOL, EOL);
+    printf("<SWDTAG> {\n"
+       "  \"interface\": \"SWD\",\n"
+       "  \"IDCODE\": \"%d\",\n    "
+       "  \"pins\": [\n"
+       "    {\n"
+       "      \"name\": \"SWDIO\",\n"
+       "      \"pin_number\": \"CH%d\",\n"
+       "      \"description\": \"Serial Wire Debug I/O\"\n"
+       "    },\n"
+       "    {\n"
+       "      \"name\": \"SWCLK\",\n"
+       "      \"pin_number\": \"CH%d\",\n"
+       "      \"description\": \"Serial Wire Debug Clock\"\n"
+       "    }\n"
+       "  ]\n"
+       "} </SWDTAG>\n", idcode, swdio, swclk);
+
+    printf("%s%s", EOL, EOL);
     swdDisplayDeviceDetails(idcode);
 }
 
@@ -1077,7 +1098,7 @@ void swdScan(void)
 {     
     swdDeviceFound = false;
     bool result = false;    
-    int channelCount = getSwdChannels();    
+    int channelCount = 16; //getSwdChannels();    
     progressCount = 0;
     maxPermutations = channelCount * (channelCount + 1);   // Needs to be fixed
     for(uint clkPin=0; clkPin <= channelCount; clkPin++)
@@ -1090,7 +1111,7 @@ void swdScan(void)
             {
                 continue;
             }
-            printProgress(progressCount, maxPermutations);
+//            printProgress(progressCount, maxPermutations);
             progressCount++;
             initSwdPins();
             result = swdBruteForce();
@@ -1101,9 +1122,9 @@ void swdScan(void)
     }
     if(swdDeviceFound == false)
     {
-        printProgress(maxPermutations, maxPermutations);
+        //printProgress(maxPermutations, maxPermutations);
         printf("%s%s", EOL, EOL);
-        printf("     No devices found. Please try again.%s%s", EOL, EOL);
+        printf("     <SWDTAG>{ \"error\": \"No SWD Target found\" }</SWDTAG> %s%s", EOL, EOL);
     }
     // Switch back to JTAG
     swdToJTAG();
@@ -1227,11 +1248,12 @@ int main()
         switch(cmd)
         {
             // Help menu requested
+            case '@':
+                ackOk(); // ping functionality 
+                break;
+
             case 'h':
                 showMenu();
-                break;
-            case 'v':
-                printf(" Current version: %s%s%s", version, EOL, EOL);
                 break;
 
             case 'j':

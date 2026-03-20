@@ -36,11 +36,11 @@ RUN \
     make
 
 # Build RP2350 project
-RUN \
-    mkdir -p /project/src/build_rp2350 && \
-    cd /project/src/build_rp2350 && \
-    cmake -DPICO_PLATFORM=rp2350 .. && \
-    make
+#RUN \
+#    mkdir -p /project/src/build_rp2350 && \
+#    cd /project/src/build_rp2350 && \
+#    cmake -DPICO_PLATFORM=rp2350 .. && \
+#    make
     
 # Command that will be invoked when the container starts
 ENTRYPOINT ["/bin/bash"]

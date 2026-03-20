@@ -170,17 +170,17 @@ enum
 };
 
 static const char *const usbd_desc_str_default[] = {
-	[USBD_STR_MANUF]   = "Aodrulez",
-	[USBD_STR_PRODUCT] = "blueTag",
+	[USBD_STR_MANUF]   = "bandits",
+	[USBD_STR_PRODUCT] = "silknode",
 	[USBD_STR_SERIAL]  = usbdSerial,
-	[USBD_STR_CDC]     = "blueTag CDC",
+	[USBD_STR_CDC]     = "silknode CDC",
 };
 
 char const* string_desc_arr_cmsisdap[] =
 {
   [STRID_LANGID]       = (const char[]) { 0x09, 0x04 }, 
-  [STRID_MANUFACTURER] = "Aodrulez",                     
-  [STRID_PRODUCT]      = "blueTag CMSIS-DAP",    
+  [STRID_MANUFACTURER] = "bandits",                     
+  [STRID_PRODUCT]      = "silknode CMSIS-DAP",    
 };
 
 
