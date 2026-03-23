@@ -673,7 +673,7 @@ void jtagScan(void)
     uint32_t tempDeviceId;
     bool volatile foundPinout=false;
     jDeviceCount=0;
-    channelCount = getChannels();            // First get the number of channels hooked
+    channelCount = maxChannels; //getChannels();            // First get the number of channels hooked
     progressCount = 0;
     maxPermutations = calculateJtagPermutations(channelCount+1);
     jTDO, jTCK, jTMS, jTDI,jTRST = 0;
