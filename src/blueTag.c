@@ -116,7 +116,7 @@ void showPrompt(void)
     printf(" > ");
 }
 void ackOk(void) {
-    printf("ACK: silknode");
+    printf("ACK: silknode\n");
 }
 
 void showMenu(void)
@@ -701,7 +701,7 @@ void jtagScan(void)
                         gpio_put(onboardLED, 0);
                         
                         progressCount = progressCount+1;
-                        printProgress(progressCount, maxPermutations);
+                        //printProgress(progressCount, maxPermutations);
                         jtagInitChannels(channelCount);                      
                         if (jPulsePins)
                         {
@@ -741,7 +741,7 @@ void jtagScan(void)
                                     continue;
                                 }
                                 progressCount = progressCount+1;
-                                printProgress(progressCount, maxPermutations);
+                                //printProgress(progressCount, maxPermutations);
                                 
                                 gpio_set_dir(jTRST, GPIO_IN);
                                 if (jPulsePins)
