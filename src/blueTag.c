@@ -1,48 +1,6 @@
-/* 
-    [ blueTag - Hardware hacker's multi-tool based on RP2040 dev boards ]
-
-        Inspired by JTAGulator. 
-
-    [References & special thanks]
-        https://github.com/grandideastudio/jtagulator
-        https://research.kudelskisecurity.com/2019/05/16/swd-arms-alternative-to-jtag/
-        https://github.com/jbentham/picoreg
-        https://github.com/szymonh/SWDscan
-        Yusufss4 (https://gist.github.com/amullins83/24b5ef48657c08c4005a8fab837b7499?permalink_comment_id=4554839#gistcomment-4554839)
-        Arm Debug Interface Architecture Specification (debug_interface_v5_2_architecture_specification_IHI0031F.pdf)
-        
-        Flashrom support : 
-            https://www.flashrom.org/supported_hw/supported_prog/serprog/serprog-protocol.html
-            https://github.com/stacksmashing/pico-serprog
-
-        Openocd support  : 
-            http://dangerousprototypes.com/blog/2009/10/09/bus-pirate-raw-bitbang-mode/
-            http://dangerousprototypes.com/blog/2009/10/27/binary-raw-wire-mode/
-            https://github.com/grandideastudio/jtagulator/blob/master/PropOCD.spin
-            https://github.com/DangerousPrototypes/Bus_Pirate/blob/master/Firmware/binIO.c
-
-        USB-to-Serial support :
-            https://github.com/xxxajk/pico-uart-bridge
-            https://github.com/Noltari/pico-uart-bridge
-
-        CMSIS-DAP support :
-            https://github.com/majbthrd/DapperMime
-            https://github.com/raspberrypi/debugprobe
-*/
-
 #include "blueTag.h"
 
-const char *banner=R"banner(
-             _______ ___     __   __ _______ _______ _______ _______ 
-            |  _    |   |   |  | |  |       |       |   _   |       |
-            | |_|   |   |   |  | |  |    ___|_     _|  |_|  |    ___|
-            |       |   |   |  |_|  |   |___  |   | |       |   | __ 
-            |  _   ||   |___|       |    ___| |   | |       |   ||  |
-            | |_|   |       |       |   |___  |   | |   _   |   |_| |
-            |_______|_______|_______|_______| |___| |__| |__|_______|)banner";
-
-
-char *version="2.1.2";
+char *version="1.0";
 #define MAX_DEVICES_LEN      32                             // Maximum number of devices allowed in a single JTAG chain
 #define MIN_IR_LEN           2                              // Minimum length of instruction register per IEEE Std. 1149.1
 #define MAX_IR_LEN           32                             // Maximum length of instruction register
@@ -101,93 +59,12 @@ static const char * const jep106[][126] = {
 
 long int strtol(const char *str, char **endptr, int base);
 
-void splashScreen(void)
-{
-    printf("%s%s",EOL, banner);
-    printf("%s", EOL);
-    printf("%s          [  Hardware hacker's multi-tool based on RP2040 dev boards  ]", EOL);
-    printf("%s          +-----------------------------------------------------------+", EOL);
-    printf("%s          | @Aodrulez             https://github.com/Aodrulez/blueTag |", EOL);
-    printf("%s          +-----------------------------------------------------------+%s%s", EOL, EOL, EOL);                                                                                                                                     
-}
-
 void showPrompt(void)
 {
-    printf(" > ");
+    printf("INPUT > ");
 }
 void ackOk(void) {
-    printf("ACK: silknode\n");
-}
-
-void showMenu(void)
-{
-    printf(" Supported commands:%s%s", EOL, EOL);
-    printf(BOLD);
-    printf("  [ Informational ]%s%s", EOL, EOL);
-    printf(OFF);
-    printf("     \"h\" = Show this menu%s", EOL);
-    printf("     \"v\" = Show current version%s%s", EOL, EOL);
-    printf(BOLD);
-    printf("  [ Debug interface enumeration (JTAGulator function) ]%s%s", EOL, EOL);
-    printf(OFF);
-    printf("     \"p\" = Toggle 'pin pulsing' setting (Default:OFF)%s", EOL);
-    printf("     \"j\" = Perform JTAG pinout scan%s", EOL);
-    printf("     \"s\" = Perform SWD pinout scan%s%s", EOL, EOL);
-    printf(BOLD);
-    printf("  [ Hardware modes ]%s%s", EOL, EOL);
-    printf(OFF);
-    printf("     \"U\" = Activate USB-to-Serial mode%s", EOL);
-    printf("     \"F\" = Activate Flashrom's serial programmer mode%s", EOL); 
-    printf("     \"O\" = Activate Openocd JTAG/SWD debugger mode%s", EOL); 
-    printf("     \"C\" = Activate CMSIS-DAP v1.0 debugger mode%s%s", EOL, EOL); 
-
-    printf(BOLD);
-    printf("  [ Hardware boot modes ]%s%s", EOL, EOL);
-    printf(OFF);
-    printf("     [     Only ONE boot mode can be active at a time     ]%s", EOL); 
-    printf("     +----------------------------------------------------+%s", EOL);
-    printf("     | RP2040 pin config   | Mode                         |%s", EOL);
-    printf("     +----------------------------------------------------+%s", EOL);             
-    printf("     | GPIO 26 -> GND      | USB-to-Serial                |%s", EOL);
-    printf("     | GPIO 27 -> GND      | Openocd JTAG/SWD debugger    |%s", EOL);
-    printf("     | GPIO 28 -> GND      | CMSIS-DAP v1.0 debugger      |%s", EOL);
-    printf("     +----------------------------------------------------+%s%s", EOL, EOL);
-
-    printf(BOLD);
-    printf(" Note 1:");
-    printf(OFF);
-    printf(" Disable 'local echo' in your terminal emulator program %s", EOL);
-    printf(BOLD);
-    printf(" Note 2:");
-    printf(OFF);
-    printf(" Try deactivating 'pin pulsing' (p) if valid JTAG/SWD pinout isn't found %s", EOL);
-    printf(BOLD);
-    printf(" Note 3:");
-    printf(OFF);
-    printf(" Unplug blueTag and reconnect (or reset) to disable 'Hardware modes' %s%s", EOL, EOL);    
-    printf(BOLD);
-    printf(" --  MAKE SURE GPIO-0 TO GPIO-15 ARE NOT CONNECTED TO 'GND'  -- %s", EOL); 
-    printf(" -- CONNECT ONLY TO TARGETS COMPATIBLE WITH 3.3V LOGIC LEVEL -- %s%s", EOL, EOL);   
-    printf(OFF);
- 
-}
-
-void printProgress(size_t count, size_t max) {
-    const int bar_width = 50;
-
-    float progress = (float) count / max;
-    int bar_length = progress * bar_width;
-
-    printf("\r     Progress: [");
-    for (int i = 0; i < bar_length; ++i) {
-        printf("#");
-    }
-    for (int i = bar_length; i < bar_width; ++i) {
-        printf(" ");
-    }
-    printf("] %.2f%%", progress * 100);
-
-    fflush(stdout);
+    printf("ACK: silknode okies\n");
 }
 
 int stringToInt(char * str)
@@ -330,8 +207,6 @@ void jtagResetChannels(int channelCount)
     }   
 }
 
-// Generate one TCK pulse. Read TDO inside the pulse.
-// Expects TCK to be low upon being called.
 bool tdoRead(void)
 {
     bool volatile tdoStatus;
@@ -341,8 +216,6 @@ bool tdoRead(void)
     return(tdoStatus);
 }
 
-// Generates on TCK Pulse
-// Expects TCK to be low when called & ignores TDO
 void tckPulse(void)
 {
     bool tdoStatus;
@@ -372,22 +245,22 @@ void tmsLow(void)
 void restoreIdle(void)
 {
     tmsHigh();
-    for(int x=0; x < 5; x++)    // 5 is sufficient, adding few more to be sure
+    for(int x=0; x < 5; x++)
     {
         tckPulse();
     }
     tmsLow();
-    tckPulse();                 // Got to Run-Test-Idle
+    tckPulse();
 }
 
 void enterShiftDR(void)
 {
     tmsHigh();
-    tckPulse();                 // Go to Select DR
+    tckPulse();
     tmsLow();
-    tckPulse();                 // Go to Capture DR
+    tckPulse();
     tmsLow();
-    tckPulse();                 // Go to Shift DR
+    tckPulse();
 }
 
 void enterShiftIR(void)
@@ -439,8 +312,7 @@ void getDeviceIDs(int number)
 
 void displayPinout(void)
 {
-    printProgress(maxPermutations, maxPermutations);
-    printf("%s%s", EOL, EOL);
+    //printProgress(maxPermutations, maxPermutations);
     printf("     [  Pinout  ]  TDI=CH%d", xTDI);
     printf(" TDO=CH%d", xTDO);
     printf(" TCK=CH%d", xTCK);
@@ -452,7 +324,43 @@ void displayPinout(void)
     else
     {
         printf(" TRST=N/A %s%s", EOL, EOL);
+        xTRST = -1;
     }
+
+    printf("<JTAG> {\n"
+       "  \"interface\": \"JTAG\",\n"
+       "  \"IDCODE\": \"0x%x\",\n    " // BUG: need to fix hardcoded IDCODE
+       "  \"pins\": [\n"
+       "    {\n"
+       "      \"name\": \"TDI\",\n"
+       "      \"pin_number\": \"CH%d\",\n"
+       "      \"description\": \"Test Data In\"\n"
+       "    },\n"
+       "    {\n"
+       "      \"name\": \"TDO\",\n"
+       "      \"pin_number\": \"CH%d\",\n"
+       "      \"description\": \"Test Data Out\"\n"
+       "    },\n"
+       "    {\n"
+       "      \"name\": \"TMS\",\n"
+       "      \"pin_number\": \"CH%d\",\n"
+       "      \"description\": \"Test Mode Select\"\n"
+       "    },\n"
+       "    {\n"
+       "      \"name\": \"TCK\",\n"
+       "      \"pin_number\": \"CH%d\",\n"
+       "      \"description\": \"Test Clock\"\n"
+       "    },\n"
+       "    {\n"
+       "      \"name\": \"TRSt\",\n"
+       "      \"pin_number\": \"CH%d\",\n"
+       "      \"description\": \"Test Reset\"\n"
+       "    }\n"
+       "  ]\n"
+       "} </JTAG>\n", 0x41414141, xTDI, xTDO, xTMS, xTCK, xTRST);
+
+    printf("%s", EOL);
+
 }
 
 const char *jep106_table_manufacturer(unsigned int bank, unsigned int id)
@@ -499,9 +407,8 @@ void displayDeviceDetails(void)
             printf("(mfg: '%s' , part: 0x%x, ver: 0x%x)%s", jep106_table_manufacturer(bank,id), part, ver, EOL);
         }
     }
-    printf("%s%s", EOL, EOL);
-    printf(" Enable hardware OpenOCD mode for JTAG debugging? (y/n): ");
-    cmd = getc(stdin);
+    //printf(" Enable hardware OpenOCD mode for JTAG debugging? (y/n): ");
+    cmd = 'n'; //cmd = getc(stdin);
     if ( cmd == 'y')
     {
         printf("y%s%s", EOL, EOL);
@@ -698,7 +605,7 @@ void jtagScan(void)
                             continue;
                         }
                         // onBoard LED notification
-                        gpio_put(onboardLED, 0);
+                        //gpio_put(onboardLED, 0);
                         
                         progressCount = progressCount+1;
                         //printProgress(progressCount, maxPermutations);
@@ -770,22 +677,22 @@ void jtagScan(void)
                               displayPinout();
                               displayDeviceDetails();
                               // onBoard LED notification
-                              gpio_put(onboardLED, 1);
+                              //gpio_put(onboardLED, 1);
                               return;
                             }                            
                         }
                         // onBoard LED notification
                         jtagResetChannels(channelCount);
-                        gpio_put(onboardLED, 1);
+                        //gpio_put(onboardLED, 1);
                     }
             }
         }
     }
     if( foundPinout == false )
     {
-        printProgress(maxPermutations, maxPermutations);
-        printf("%s%s", EOL, EOL);
-        printf("     No JTAG devices found. Please try again.%s%s", EOL, EOL);
+        //printProgress(maxPermutations, maxPermutations);
+        //printf("%s", EOL);
+        printf("<JTAG>{ \"error\": \"No JTAG Target found\" }</JTAG>\n");
     }
 
 }
@@ -807,19 +714,6 @@ void jtagScan(void)
 uint xSwdClk=0;
 uint xSwdIO=1;
 bool swdDeviceFound=false;
-// int getSwdChannels(void)
-// {
-//     char x;
-//     printf("     Enter number of channels hooked up (Min 2, Max %d): ", maxChannels);
-//     x = getIntFromSerial();
-//     while(x < 2 || x > maxChannels)
-//     {
-//         printf("     Enter a valid value: ");
-//         x = getIntFromSerial();
-//     }
-//     printf("     Number of channels set to: %d%s%s", x, EOL, EOL);
-//     return(x);
-// }
 
 void swdDisplayDeviceDetails(uint32_t idcode)
 {
@@ -836,29 +730,29 @@ void swdDisplayDeviceDetails(uint32_t idcode)
     }
 
     printf("%s%s", EOL, EOL);
-    printf(" Enable hardware OpenOCD mode for SWD debugging? (y/n): ");
-    cmd = getc(stdin);
-    if ( cmd == 'y')
-    {
-        printf("y%s%s", EOL, EOL);
-        printf(" [ Ex. Openocd command ]%s%s", EOL, EOL);
-        printf("   'openocd -f buspirate.cfg -c \"buspirate port /dev/ttyACM0; transport select swd;\" -f stm32f1x.cfg'%s%s", EOL, EOL);
-        //printf("    Replace 'XXXXXXXXXX' with COM port of blueTag [Ex. '/dev/ttyACM0' (Linux) or 'COM4' (Win)]%s%s", EOL, EOL);    
-        resetUART(); 
-        initOpenocdMode(OPENOCD_PIN_DEFAULT, OPENOCD_PIN_DEFAULT, OPENOCD_PIN_DEFAULT, OPENOCD_PIN_DEFAULT, xSwdClk, xSwdIO, OPENOCD_MODE_SWD);
-    }
-    printf("%s%s", EOL, EOL);
+    // printf(" Enable hardware OpenOCD mode for SWD debugging? (y/n): ");
+    // cmd = getc(stdin);
+    // if ( cmd == 'y')
+    // {
+    //     printf("y%s%s", EOL, EOL);
+    //     printf(" [ Ex. Openocd command ]%s%s", EOL, EOL);
+    //     printf("   'openocd -f buspirate.cfg -c \"buspirate port /dev/ttyACM0; transport select swd;\" -f stm32f1x.cfg'%s%s", EOL, EOL);
+    //     //printf("    Replace 'XXXXXXXXXX' with COM port of blueTag [Ex. '/dev/ttyACM0' (Linux) or 'COM4' (Win)]%s%s", EOL, EOL);
+    //     resetUART();
+    //     initOpenocdMode(OPENOCD_PIN_DEFAULT, OPENOCD_PIN_DEFAULT, OPENOCD_PIN_DEFAULT, OPENOCD_PIN_DEFAULT, xSwdClk, xSwdIO, OPENOCD_MODE_SWD);
+    // }
+    // printf("%s%s", EOL, EOL);
 }
 
 void swdDisplayPinout(int swdio, int swclk, uint32_t idcode)
 {
     //printProgress(maxPermutations, maxPermutations); // return as JSON 
-    printf("%s%s", EOL, EOL);
+
     printf("     [  Pinout  ]  SWDIO=CH%d", swdio);
     printf(" SWCLK=CH%d%s%s", swclk, EOL, EOL);
     printf("<SWDTAG> {\n"
        "  \"interface\": \"SWD\",\n"
-       "  \"IDCODE\": \"%d\",\n    "
+       "  \"IDCODE\": \"0x%x\",\n    "
        "  \"pins\": [\n"
        "    {\n"
        "      \"name\": \"SWDIO\",\n"
@@ -873,7 +767,7 @@ void swdDisplayPinout(int swdio, int swclk, uint32_t idcode)
        "  ]\n"
        "} </SWDTAG>\n", idcode, swdio, swclk);
 
-    printf("%s%s", EOL, EOL);
+    printf("%s", EOL);
     swdDisplayDeviceDetails(idcode);
 }
 
@@ -1081,9 +975,9 @@ void swdTrySWDJ(void)
 bool swdBruteForce(void)
 {
     // onBoard LED notification
-    gpio_put(onboardLED, 0);
+    //gpio_put(onboardLED, 0);
     swdTrySWDJ();
-    gpio_put(onboardLED, 1);
+    //gpio_put(onboardLED, 1);
     if(swdDeviceFound)
     { 
         swdToJTAG();
@@ -1123,14 +1017,12 @@ void swdScan(void)
     if(swdDeviceFound == false)
     {
         //printProgress(maxPermutations, maxPermutations);
-        printf("%s%s", EOL, EOL);
-        printf("     <SWDTAG>{ \"error\": \"No SWD Target found\" }</SWDTAG> %s%s", EOL, EOL);
+        //printf("%s", EOL);
+        printf("<SWDTAG>{ \"error\": \"No SWD Target found\" }</SWDTAG>\n");
     }
     // Switch back to JTAG
     swdToJTAG();
 }
-
-//--------------------------------------------Main--------------------------------------------------
 
 static void busyLoop(size_t count) 
 {
@@ -1237,8 +1129,8 @@ int main()
     
     //get user input to display splash & menu    
     cmd=getc(stdin);
-    splashScreen();
-    showMenu();
+    printf("Protocol Analyzer - silknode harwdare\n");
+    //showMenu();
     showPrompt();
 
     while(1)
@@ -1247,13 +1139,19 @@ int main()
         printf("%c%s%s", cmd, EOL, EOL);
         switch(cmd)
         {
-            // Help menu requested
             case '@':
+                for(int x=0;x<=7;x++)
+                {
+                    gpio_put(onboardLED, 0);
+                    sleep_ms(100);
+                    gpio_put(onboardLED, 1);
+                    sleep_ms(100);
+                }
                 ackOk(); // ping functionality 
                 break;
 
             case 'h':
-                showMenu();
+                printf("Not for now\n");
                 break;
 
             case 'j':
@@ -1274,156 +1172,6 @@ int main()
                 {
                     printf("     Pin pulsing deactivated.%s%s", EOL, EOL);
                 }                
-                break;
-
-
-            case 'l':
-                for(int x=0;x<=25;x++)
-                {
-                    gpio_put(onboardLED, 1);
-                    sleep_ms(250);
-                    gpio_put(onboardLED, 0);
-                    sleep_ms(250);
-                }
-                break;
-
-            case 'U':
-                printf(BOLD);
-                printf(" USB-to-Serial mode%s%s", EOL, EOL);
-                printf(OFF);
-                printf(" [ Pin configuration to target UART interface ]%s%s", EOL, EOL);               
-                printf("          +-------------------------+%s", EOL);
-                printf("          | RP2040 pin  | Target    |%s", EOL);
-                printf("          +-------------------------+%s", EOL);
-                printf("          | GPIO 0 (TX) | RX        |%s", EOL);
-                printf("          | GPIO 1 (RX) | TX        |%s", EOL);
-                printf("          | GND         | GND       |%s", EOL);
-                printf("          |-------------------------|%s", EOL);
-                printf("          | Optional:               |%s", EOL);
-                printf("          |-------------------------|%s", EOL);
-                printf("          | 3V3 Out     | VCC       |%s", EOL);
-                printf("          +-------------------------+%s%s", EOL, EOL);
-                printf(" [ Information ]%s%s", EOL, EOL);
-                printf("   In this mode, blueTag functions like a standard USB-to-Serial programmer,%s", EOL);
-                printf("   simply (re)open the COM port and configure the UART settings as required.%s%s", EOL, EOL);
-                printf(BOLD);
-                printf(" Note:");
-                printf(OFF);
-                printf(" Connect blueTag's '3V3 Out' pin to the target UART's 'VCC' pin only if the target%s", EOL); 
-                printf("       isn't externally powered%s%s", EOL, EOL); 
-
-                usbMode = USB_MODE_UART;
-                resetUART();
-                fflush(stdout);
-                busyLoop(USB_HOST_RECOGNISE_TIME);
-                usbMode = USB_MODE_UART;
-                stdio_set_driver_enabled(&stdio_usb, false);
-
-                stdio_usb_deinit();
-                uartMode();
-                break;
-
-            case 'F':
-                printf(BOLD);           
-                printf(" Flashrom's Serial Programmer mode %s%s", EOL, EOL);
-                printf(OFF);
-                printf(" [ Pin configuration to target SPI Flash IC ]%s%s", EOL, EOL);                
-                printf("         +-------------------------+%s", EOL);
-                printf("         | RP2040 pin  | SPI Flash |%s", EOL);
-                printf("         +-------------------------+%s", EOL);
-                printf("         | GPIO 1      | CS        |%s", EOL);
-                printf("         | GPIO 2      | CLK       |%s", EOL);
-                printf("         | GPIO 3      | MOSI / DI |%s", EOL);
-                printf("         | GPIO 4      | MISO / DO |%s", EOL);
-                printf("         | GND         | GND       |%s", EOL);
-                printf("         |-------------------------|%s", EOL);
-                printf("         | Optional:               |%s", EOL);
-                printf("         |-------------------------|%s", EOL);
-                printf("         | 3V3 Out     | VCC       |%s", EOL);
-                printf("         +-------------------------+%s%s", EOL, EOL);
-                printf(" [ Ex. Flashrom commands ]%s%s", EOL, EOL);
-                printf("   Read  : 'flashrom -p serprog:dev=XXXXXXXXXX:115200,spispeed=12M -r flashBackup.bin'%s", EOL);
-                printf("   Write : 'flashrom -p serprog:dev=XXXXXXXXXX:115200,spispeed=12M -w flash.bin'%s%s", EOL, EOL);
-                printf("   Replace 'XXXXXXXXXX' with COM port of blueTag [Ex. '/dev/ttyACM0' (Linux) or 'COM4' (Win)]%s%s", EOL, EOL);
-                printf(BOLD);
-                printf(" Note:");
-                printf(OFF);
-                printf(" Connect blueTag's '3V3 Out' pin to target SPI Flash IC's 'VCC' pin only if the target%s", EOL); 
-                printf("       isn't externally powered%s%s", EOL, EOL); 
-                resetUART();
-                initSerProg();
-                break;
-
-            case 'O':
-                printf(BOLD);
-                printf(" Openocd JTAG/SWD debugger mode %s%s", EOL, EOL);
-                printf(OFF);
-                printf(" [ Pin configuration to Target ]%s%s", EOL, EOL);
-                printf("   +-------------------------+%s", EOL);
-                printf("   | RP2040 pin  | Target    |%s", EOL);
-                printf("   +-------------------------+%s", EOL);
-                printf("   | JTAG mode:              |%s", EOL);
-                printf("   |-------------------------|%s", EOL);                
-                printf("   | GPIO 0      | TCK       |%s", EOL);
-                printf("   | GPIO 1      | TMS       |%s", EOL);
-                printf("   | GPIO 2      | TDI       |%s", EOL);
-                printf("   | GPIO 3      | TDO       |%s", EOL);
-                printf("   | GND         | GND       |%s", EOL);                
-                printf("   |-------------------------|%s", EOL);
-                printf("   | SWD mode:               |%s", EOL);
-                printf("   |-------------------------|%s", EOL);    
-                printf("   | GPIO 2      | SWDCLK    |%s", EOL);
-                printf("   | GPIO 3      | SWDIO     |%s", EOL);                                            
-                printf("   | GND         | GND       |%s", EOL);
-                printf("   +-------------------------+%s%s", EOL, EOL);
-                printf(" [ Ex. Openocd commands ]%s%s", EOL, EOL);
-                printf("   JTAG : 'openocd -f interface/buspirate.cfg -c \"buspirate port XXXXXXXXXX; transport select jtag;\" -f target/esp32.cfg'%s", EOL);
-                printf("   SWD  : 'openocd -f interface/buspirate.cfg -c \"buspirate port XXXXXXXXXX; transport select swd;\" -f target/stm32f1x.cfg'%s%s", EOL, EOL);
-                printf("   Replace 'XXXXXXXXXX' with COM port of blueTag [Ex. '/dev/ttyACM0' (Linux) or 'COM4' (Win)]%s%s", EOL, EOL);
-                resetUART();                
-     
-                jTCK = OPENOCD_PIN_DEFAULT;
-                jTMS = OPENOCD_PIN_DEFAULT;
-                jTDI = OPENOCD_PIN_DEFAULT;
-                jTDO = OPENOCD_PIN_DEFAULT;
-                xSwdClk = OPENOCD_PIN_DEFAULT;
-                xSwdIO = OPENOCD_PIN_DEFAULT;
-                initOpenocdMode(jTCK, jTMS, jTDI, jTDO, xSwdClk, xSwdIO, OPENOCD_MODE_GENERIC);
-                break;
-
-            case 'C':
-                printf(BOLD);
-                printf(" CMSIS-DAP v1.0 debugger mode %s%s", EOL, EOL);
-                printf(OFF);
-                printf(" [ Pin configuration to Target ]%s%s", EOL, EOL);                
-                printf("   +-------------------------+%s", EOL);
-                printf("   | RP2040 pin  | Target    |%s", EOL);
-                printf("   +-------------------------+%s", EOL);             
-                printf("   | GPIO 0 (TX) | UART RX   |%s", EOL);
-                printf("   | GPIO 1 (RX) | UART TX   |%s", EOL);
-                printf("   | GPIO 2      | SWCLK     |%s", EOL);
-                printf("   | GPIO 3      | SWDIO     |%s", EOL);
-                printf("   | GND         | GND       |%s", EOL);                
-                printf("   +-------------------------+%s%s", EOL, EOL);
-                printf(" [ Ex. Openocd command ]%s%s", EOL, EOL);
-                printf("   CMSIS-DAP : 'openocd -f interface/cmsis-dap.cfg -f target/stm32f1x.cfg'%s%s", EOL, EOL);
-
-                printf(" Press any key to activate... %s%s", EOL, EOL);
-                char cmd = getc(stdin);
-                printf(BOLD);
-                printf(" -- Activated --%s%s", EOL, EOL);
-                sleep_ms(4);
-                printf(OFF);
-                fflush(stdout);
-                busyLoop(USB_HOST_RECOGNISE_TIME);
-                tud_disconnect();
-                multicore_reset_core1(); 
-                stdio_set_driver_enabled(&stdio_usb, false);
-                stdio_deinit_all();                
-                sleep_us(50);
-                usbMode = USB_MODE_CMSISDAP;
-                initUART();
-                cmsisDapInit();
                 break;
 
             default:
