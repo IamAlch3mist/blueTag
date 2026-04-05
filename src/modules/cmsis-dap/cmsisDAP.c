@@ -31,10 +31,18 @@
 #include "DAP_config.h" 
 #include "DAP.h"
 
+uint32_t PROBE_PIN_SWCLK = 0;
+uint32_t PROBE_PIN_SWDIO = 0;
+
+void cmsisDapSetPins(uint32_t swclk, uint32_t swdio) {
+PROBE_PIN_SWCLK = swclk;
+PROBE_PIN_SWDIO = swdio;
+}
+
 int cmsisDapInit(void)
 {
   bool connected = false;
-  cdc_uart_init();
+  //cdc_uart_init();
   DAP_Setup();
   tusb_init();
   connected = tud_connect();
@@ -48,7 +56,7 @@ int cmsisDapInit(void)
   while (1)
   {
     tud_task(); 
-    cdc_task();
+    //cdc_task();
   }
   return 0;
 }

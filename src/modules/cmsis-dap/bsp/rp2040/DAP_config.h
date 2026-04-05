@@ -60,8 +60,8 @@ This information includes:
 
 #include "picoprobe_config.h"
 
-/* #define PROBE_PIN_SWCLK_MASK (1UL << (PROBE_PIN_SWCLK))
-#define PROBE_PIN_SWDIO_MASK (1UL << (PROBE_PIN_SWDIO)) */
+// #define PROBE_PIN_SWCLK_MASK (1UL << (PROBE_PIN_SWCLK))
+// #define PROBE_PIN_SWDIO_MASK (1UL << (PROBE_PIN_SWDIO)) 
 
 #define PROBE_PIN_SWCLK_MASK (1UL << (PROBE_PIN_SWCLK))
 #define PROBE_PIN_SWDIO_MASK (1UL << (PROBE_PIN_SWDIO))

@@ -68,8 +68,10 @@ void cdc_task(void) {
 }
 
 void tud_cdc_line_coding_cb(uint8_t itf, cdc_line_coding_t const* line_coding) {
-    if (usbMode == USB_MODE_CMSISDAP)
-    {
-        uart_init(PICOPROBE_UART_INTERFACE, line_coding->bit_rate);
-    }
+    // if (usbMode == USB_MODE_CMSISDAP)
+    // {
+    //     uart_init(PICOPROBE_UART_INTERFACE, line_coding->bit_rate);
+    // }
+    (void) itf;
+    (void) line_coding;
 }

@@ -26,6 +26,7 @@
 #ifndef _TUSB_CONFIG_H_
 #define _TUSB_CONFIG_H_
 
+#include <stdint.h> 
 #include <tusb_option.h>
 
 #ifdef __cplusplus
@@ -60,6 +61,7 @@
 
 void cdc_uart_init(void);
 void cdc_task(void);
+void cmsisDapSetPins(uint32_t swclk, uint32_t swdio);
 int cmsisDapInit(void);
 
 #ifdef __cplusplus

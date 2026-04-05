@@ -23,13 +23,17 @@
  *
  */
 
+#include <stdint.h>
+
 #ifndef PICOPROBE_H_
 #define PICOPROBE_H_
 
 // PIO config
 #define PROBE_SM 0
-#define PROBE_PIN_SWCLK 2
-#define PROBE_PIN_SWDIO 3
+// #define PROBE_PIN_SWCLK 10 // changes made to choose SWD pins of our choice
+// #define PROBE_PIN_SWDIO 11 // 
+extern uint32_t PROBE_PIN_SWCLK;
+extern uint32_t PROBE_PIN_SWDIO;
 
 // UART config
 #define PICOPROBE_UART_TX 0
@@ -40,4 +44,5 @@
 // LED config
 #define PICOPROBE_LED 24
 
+void cmsisDapSetPins(uint32_t swclk, uint32_t swdio);
 #endif

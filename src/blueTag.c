@@ -1173,6 +1173,23 @@ int main()
                     printf("     Pin pulsing deactivated.%s%s", EOL, EOL);
                 }                
                 break;
+            case 'C':
+                printf("Press enter to continue: ");
+                char cmd = getc(stdin);
+                sleep_ms(4);
+                printf("swd pins swclk: ch%d: swdio ch%d\n", xSwdClk, xSwdIO);
+                cmsisDapSetPins(xSwdClk, xSwdIO); // need to create function to setup DAP Mode
+                fflush(stdout);
+                busyLoop(USB_HOST_RECOGNISE_TIME);
+                tud_disconnect();
+                multicore_reset_core1();
+                stdio_set_driver_enabled(&stdio_usb, false);
+                stdio_deinit_all();
+                sleep_us(50);
+                usbMode = USB_MODE_CMSISDAP;
+                initUART();
+                cmsisDapInit();
+                break;
 
             default:
                 printf(" Unknown command %s%s", EOL, EOL);
