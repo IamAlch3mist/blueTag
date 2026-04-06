@@ -33,11 +33,22 @@
 
 uint32_t PROBE_PIN_SWCLK = 0;
 uint32_t PROBE_PIN_SWDIO = 0;
+uint32_t PROBE_PIN_TDI = 0;
+uint32_t PROBE_PIN_TDO = 0;
 
 void cmsisDapSetPins(uint32_t swclk, uint32_t swdio) {
 PROBE_PIN_SWCLK = swclk;
 PROBE_PIN_SWDIO = swdio;
 }
+
+
+void cmsisDapSetJTAGPins(uint32_t tck, uint32_t tms, uint32_t tdi, uint32_t tdo){
+  PROBE_PIN_SWCLK = tck;
+  PROBE_PIN_SWDIO = tms;
+  PROBE_PIN_TDI = tdi;
+  PROBE_PIN_TDO = tdo;
+}
+
 
 int cmsisDapInit(void)
 {

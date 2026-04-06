@@ -62,6 +62,7 @@
 void cdc_uart_init(void);
 void cdc_task(void);
 void cmsisDapSetPins(uint32_t swclk, uint32_t swdio);
+void cmsisDapSetJTAGPins(uint32_t tck, uint32_t tms, uint32_t tdi, uint32_t tdo);
 int cmsisDapInit(void);
 
 #ifdef __cplusplus

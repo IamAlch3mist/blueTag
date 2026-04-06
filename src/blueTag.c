@@ -407,8 +407,9 @@ void displayDeviceDetails(void)
             printf("(mfg: '%s' , part: 0x%x, ver: 0x%x)%s", jep106_table_manufacturer(bank,id), part, ver, EOL);
         }
     }
-    //printf(" Enable hardware OpenOCD mode for JTAG debugging? (y/n): ");
-    cmd = 'n'; //cmd = getc(stdin);
+    printf(" Enable hardware OpenOCD mode for JTAG debugging? (y/n): ");
+    //cmd = 'n'; //
+    cmd = getc(stdin);
     if ( cmd == 'y')
     {
         printf("y%s%s", EOL, EOL);
@@ -418,6 +419,22 @@ void displayDeviceDetails(void)
         resetUART();  
         initOpenocdMode(jTCK, jTMS, jTDI, jTDO, OPENOCD_PIN_DEFAULT, OPENOCD_PIN_DEFAULT, OPENOCD_MODE_JTAG);
     }
+    else if (cmd == 'c') {
+        printf("c%s%s", EOL, EOL);
+        printf(" [CMSIS-DAP ] Using TCK=ch%d TMS=ch%d TDI=ch%d TDO=ch%d%s%s", xTCK, xTMS, xTDI, xTDO, EOL, EOL);
+        printf(" [ Ex. Openocd command ]%s%s", EOL, EOL);
+        printf("   CMSIS-DAP : 'openocd -f interface/cmsis-dap.cfg -c \"transport select jtag\" -f target/stm32wbx.cfg'%s%s", EOL, EOL);
+        cmsisDapSetJTAGPins(xTCK, xTMS, xTDI, xTDO);
+        resetUART();
+        multicore_reset_core1();
+        stdio_set_driver_enabled(&stdio_usb, false);
+        stdio_deinit_all();
+        sleep_us(50);
+        usbMode = USB_MODE_CMSISDAP;
+        initUART();
+        cmsisDapInit();
+    }
+
     printf("%s%s", EOL, EOL);
 }
 

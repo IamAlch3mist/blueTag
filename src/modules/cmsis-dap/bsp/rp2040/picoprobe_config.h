@@ -34,6 +34,8 @@
 // #define PROBE_PIN_SWDIO 11 // 
 extern uint32_t PROBE_PIN_SWCLK;
 extern uint32_t PROBE_PIN_SWDIO;
+extern uint32_t PROBE_PIN_TDI;
+extern uint32_t PROBE_PIN_TDO;
 
 // UART config
 #define PICOPROBE_UART_TX 0
@@ -45,4 +47,6 @@ extern uint32_t PROBE_PIN_SWDIO;
 #define PICOPROBE_LED 24
 
 void cmsisDapSetPins(uint32_t swclk, uint32_t swdio);
+void cmsisDapSetJTAGPins(uint32_t tck, uint32_t tms, uint32_t tdi, uint32_t tdo);
+
 #endif

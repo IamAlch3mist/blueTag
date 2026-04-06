@@ -65,7 +65,8 @@ This information includes:
 
 #define PROBE_PIN_SWCLK_MASK (1UL << (PROBE_PIN_SWCLK))
 #define PROBE_PIN_SWDIO_MASK (1UL << (PROBE_PIN_SWDIO))
-
+#define PROBE_PIN_TDI_MASK   (1UL << (PROBE_PIN_TDI))
+#define PROBE_PIN_TDO_MASK   (1UL << (PROBE_PIN_TDO))
 
 /// Processor Clock of the Cortex-M MCU used in the Debug Unit.
 /// This value is used to calculate the SWD/JTAG clock speed.
@@ -85,7 +86,7 @@ This information includes:
 
 /// Indicate that JTAG communication mode is available at the Debug Port.
 /// This information is returned by the command \ref DAP_Info as part of <b>Capabilities</b>.
-#define DAP_JTAG                0               ///< JTAG Mode: 1 = available, 0 = not available.
+#define DAP_JTAG                1               ///< JTAG Mode: 1 = available, 0 = not available.
 
 /// Configure maximum number of JTAG devices on the scan chain connected to the Debug Access Port.
 /// This setting impacts the RAM requirements of the Debug Unit. Valid range is 1 .. 255.
@@ -309,7 +310,23 @@ Configures the DAP Hardware I/O pins for JTAG mode:
  - TDO to input mode.
 */ 
 __STATIC_INLINE void PORT_JTAG_SETUP (void) {
-  ;
+  //;
+  resets_hw->reset &= ~(RESETS_RESET_IO_BANK0_BITS | RESETS_RESET_PADS_BANK0_BITS);
+  sio_hw->gpio_oe_set = PROBE_PIN_SWCLK_MASK | PROBE_PIN_SWDIO_MASK | PROBE_PIN_TDI_MASK;
+  sio_hw->gpio_set    = PROBE_PIN_SWCLK_MASK | PROBE_PIN_SWDIO_MASK | PROBE_PIN_TDI_MASK;
+
+  sio_hw->gpio_oe_clr = PROBE_PIN_TDO_MASK;
+
+  hw_write_masked(&padsbank0_hw->io[PROBE_PIN_SWCLK], PADS_BANK0_GPIO0_IE_BITS, PADS_BANK0_GPIO0_IE_BITS | PADS_BANK0_GPIO0_OD_BITS);
+  hw_write_masked(&padsbank0_hw->io[PROBE_PIN_SWDIO], PADS_BANK0_GPIO0_IE_BITS, PADS_BANK0_GPIO0_IE_BITS | PADS_BANK0_GPIO0_OD_BITS);
+  hw_write_masked(&padsbank0_hw->io[PROBE_PIN_TDI],   PADS_BANK0_GPIO0_IE_BITS, PADS_BANK0_GPIO0_IE_BITS | PADS_BANK0_GPIO0_OD_BITS);
+  hw_write_masked(&padsbank0_hw->io[PROBE_PIN_TDO],   PADS_BANK0_GPIO0_IE_BITS, PADS_BANK0_GPIO0_IE_BITS | PADS_BANK0_GPIO0_OD_BITS);
+
+  iobank0_hw->io[PROBE_PIN_SWCLK].ctrl = GPIO_FUNC_SIO << IO_BANK0_GPIO0_CTRL_FUNCSEL_LSB;
+  iobank0_hw->io[PROBE_PIN_SWDIO].ctrl = GPIO_FUNC_SIO << IO_BANK0_GPIO0_CTRL_FUNCSEL_LSB;
+  iobank0_hw->io[PROBE_PIN_TDI].ctrl   = GPIO_FUNC_SIO << IO_BANK0_GPIO0_CTRL_FUNCSEL_LSB;
+  iobank0_hw->io[PROBE_PIN_TDO].ctrl   = GPIO_FUNC_SIO << IO_BANK0_GPIO0_CTRL_FUNCSEL_LSB;
+ 
 }
  
 /** Setup SWD I/O pins: SWCLK, SWDIO, and nRESET.
@@ -336,7 +353,7 @@ Disables the DAP Hardware I/O pins which configures:
  - TCK/SWCLK, TMS/SWDIO, TDI, TDO, nTRST, nRESET to High-Z mode.
 */
 __STATIC_INLINE void PORT_OFF (void) {
-  sio_hw->gpio_oe_clr = PROBE_PIN_SWCLK_MASK | PROBE_PIN_SWDIO_MASK;
+  sio_hw->gpio_oe_clr = PROBE_PIN_SWCLK_MASK | PROBE_PIN_SWDIO_MASK | PROBE_PIN_TDI_MASK | PROBE_PIN_TDO_MASK;
 }
 
 
@@ -346,7 +363,8 @@ __STATIC_INLINE void PORT_OFF (void) {
 \return Current status of the SWCLK/TCK DAP hardware I/O pin.
 */
 __STATIC_FORCEINLINE uint32_t PIN_SWCLK_TCK_IN  (void) {
-  return (0U);
+  return (sio_hw->gpio_in & PROBE_PIN_SWCLK_MASK) ? 1U : 0U;
+  //return (0U);
 }
 
 /** SWCLK/TCK I/O pin: Set Output to High.
@@ -370,7 +388,8 @@ __STATIC_FORCEINLINE void     PIN_SWCLK_TCK_CLR (void) {
 \return Current status of the SWDIO/TMS DAP hardware I/O pin.
 */
 __STATIC_FORCEINLINE uint32_t PIN_SWDIO_TMS_IN  (void) {
-  return (0U);
+  return (sio_hw->gpio_in & PROBE_PIN_SWDIO_MASK) ? 1U : 0U;
+  // return (0U);
 }
 
 /* PIN_SWDIO_TMS_SET and PIN_SWDIO_TMS_CLR are used by SWJ_Sequence */
@@ -429,14 +448,19 @@ __STATIC_FORCEINLINE void     PIN_SWDIO_OUT_DISABLE (void) {
 \return Current status of the TDI DAP hardware I/O pin.
 */
 __STATIC_FORCEINLINE uint32_t PIN_TDI_IN  (void) {
-  return (0U);
+  return (sio_hw->gpio_in & PROBE_PIN_TDI_MASK) ? 1U : 0U;
+  //return (0U);
 }
 
 /** TDI I/O pin: Set Output.
 \param bit Output value for the TDI DAP hardware I/O pin.
 */
 __STATIC_FORCEINLINE void     PIN_TDI_OUT (uint32_t bit) {
-  (void)bit;
+  // (void)bit;
+  if (bit & 1)
+    sio_hw->gpio_set = PROBE_PIN_TDI_MASK;
+  else
+    sio_hw->gpio_set = PROBE_PIN_TDI_MASK;
 }
 
 
@@ -446,7 +470,8 @@ __STATIC_FORCEINLINE void     PIN_TDI_OUT (uint32_t bit) {
 \return Current status of the TDO DAP hardware I/O pin.
 */
 __STATIC_FORCEINLINE uint32_t PIN_TDO_IN  (void) {
-  return (0U);
+  // return (0U);
+  return (sio_hw->gpio_in & PROBE_PIN_TDO_MASK) ? 1U : 0U;
 }
 
 
