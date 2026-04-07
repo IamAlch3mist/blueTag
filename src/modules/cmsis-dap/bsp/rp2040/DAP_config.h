@@ -460,7 +460,7 @@ __STATIC_FORCEINLINE void     PIN_TDI_OUT (uint32_t bit) {
   if (bit & 1)
     sio_hw->gpio_set = PROBE_PIN_TDI_MASK;
   else
-    sio_hw->gpio_set = PROBE_PIN_TDI_MASK;
+    sio_hw->gpio_clr = PROBE_PIN_TDI_MASK;
 }
 
 
